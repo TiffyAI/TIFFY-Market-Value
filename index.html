@@ -1,52 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>TIFFYAI Token Price</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>/*…your existing styles…*/</style>
-</head>
+<head> …your styles… </head>
 <body>
   <div id="price-box">
-    <div id="usd-price">TIFFYAI Price: Loading USD…</div>
-    <div class="footer">Real-time from BSC Liquidity Pool</div>
+    <div id="usd-price">TIFFYAI Price: Loading USD...</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script>
     const web3 = new Web3('https://bsc-dataseed.binance.org/');
-    const poolAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D'; // Your V3 pool
-    const poolABI = [ // Minimal V3 ABI
-      {"constant":true,"inputs":[],"name":"slot0","outputs":[
-        {"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},
-        {"internalType":"int24","name":"tick","type":"int24"},
-        {"internalType":"uint16","name":"observationIndex","type":"uint16"},
-        {"internalType":"uint16","name":"observationCardinality","type":"uint16"},
-        {"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},
-        {"internalType":"uint8","name":"feeProtocol","type":"uint8"}],"stateMutability":"view","type":"function"},
-      {"constant":true,"inputs":[],"name":"liquidity","outputs":[{"internalType":"uint128","name":"","type":"uint128"}],"stateMutability":"view","type":"function"},
-    ];
-    const pair = new web3.eth.Contract(poolABI, poolAddress);
 
-    async function getBNBPrice() {
+    const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
+    const slot0ABI = [ /* as above */ ];
+    const pair = new web3.eth.Contract(slot0ABI, pairAddress);
+
+    async function getBNBPriceUSD() {
       try {
-        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
-        return (await r.json()).binancecoin.usd;
-      } catch { return 0; }
-    }
-
-    function fromX96ToPrice(sqrtX96, decimals0 = 18, decimals1 = 18) {
-      const price = (sqrtX96 / (2n ** 96n)) ** 2;
-      const factor = 10 ** (decimals0 - decimals1);
-      return Number(price) * factor;
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
+        const json = await res.json();
+        return json.binancecoin.usd;
+      } catch {
+        return 0;
+      }
     }
 
     async function updatePrice() {
-      const [slot0, bnbUSD] = await Promise.all([pair.methods.slot0().call(), getBNBPrice()]);
-      const sqrtX96 = BigInt(slot0.sqrtPriceX96);
-      const priceBNB = fromX96ToPrice(sqrtX96);
-      const priceUSD = priceBNB * bnbUSD;
-      document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceUSD.toFixed(6)}`;
+      try {
+        const r = await pair.methods.slot0().call();
+        const sqrtPriceX96 = web3.utils.toBN(r.sqrtPriceX96);
+        const numerator = sqrtPriceX96.mul(sqrtPriceX96);
+        const denom = web3.utils.toBN(2).pow(web3.utils.toBN(192));
+        const priceBNB = parseFloat(numerator.div(denom).toString());
+
+        const usdPerBNB = await getBNBPriceUSD();
+        const usdPrice = priceBNB * usdPerBNB;
+
+        document.getElementById('usd-price')
+          .innerText = `TIFFYAI Price: $${usdPrice.toFixed(6)} USD`;
+      } catch(err) {
+        console.error(err);
+        document.getElementById('usd-price')
+          .innerText = `Error loading price`;
+      }
     }
 
     updatePrice();
