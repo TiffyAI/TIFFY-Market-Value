@@ -2,157 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TIFFYAI Price Checker</title>
+  <title>TIFFYAI Token Price</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      background-color: #0f0f0f;
-      color: #00ffcc;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    #price-box {
-      background-color: #1c1c1c;
-      padding: 20px 30px;
-      border: 1px solid #00ffcc;
-      border-radius: 12px;
-      box-shadow: 0 0 20px #00ffcc88;
-      text-align: center;
-    }
-    #usd-price {
-      font-size: 1.8em;
-      font-weight: bold;
-      margin: 10px 0;
-      color: #00ffd9;
-    }
-    #popupGame, #overlay {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-    }
-    #overlay {
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-    }
-    #popupGame {
-      top: 10%; left: 50%;
-      width: 90%; max-width: 500px;
-      background: #001f3f;
-      border: 2px solid teal;
-      border-radius: 10px;
-      padding: 20px;
-      transform: translateX(-50%);
-      color: white;
-    }
-    #popupGame button {
-      background: linear-gradient(135deg, #f2c94c, #f2994a);
-      color: black;
-      font-weight: bold;
-      border: none;
-      padding: 14px 28px;
-      border-radius: 8px;
-      margin-top: 20px;
-      font-size: 18px;
-      cursor: pointer;
-      box-shadow: 0 0 20px #f2c94c;
-      animation: pulse 2s infinite;
-      transition: all 0.3s ease-in-out;
-    }
-    #showGameButton {
-      margin-top: 20px;
-      padding: 12px 24px;
-      background: teal;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 18px;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 12px #f2c94c; }
-      50% { box-shadow: 0 0 35px #f2994a; }
-      100% { box-shadow: 0 0 12px #f2c94c; }
-    }
-  </style>
+  <style>/*…your existing styles…*/</style>
 </head>
 <body>
-
   <div id="price-box">
-    <div id="usd-price">TIFFYAI Price: Loading…</div>
-    <div>Fetched from PancakeSwap V3 pool</div>
-  </div>
-
-  <button id="showGameButton" onclick="showPopup()">Claim 1 TIFFY & Blue Key</button>
-
-  <div id="overlay" onclick="hidePopup()"></div>
-  <div id="popupGame">
-    <h2>Start Mining TiffyAI</h2>
-    <p>Click to begin your journey. Collect 1 TIFFY & 1 Blue Key Now!</p>
-    <button onclick="window.open('https://www.tiffyai.co.za/key-claim','_blank')">Collect 1 TIFFY</button>
+    <div id="usd-price">TIFFYAI Price: Loading USD…</div>
+    <div class="footer">Real-time from BSC Liquidity Pool</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script>
     const web3 = new Web3('https://bsc-dataseed.binance.org/');
-    const TIFFY = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5';
-    const WBNB = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
-    const FEE = 100; // 0.01% = fee tier 100
-    const factoryAddr = '0x85BFa53b72a30D859D7786953E750E3dCbaCE57c'; // Pancake V3 factory
-    const factoryABI = [{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint24","name":"fee","type":"uint24"}],"name":"getPool","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
-    const poolABI = [{"inputs":[],"name":"slot0","outputs":[{"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},{"internalType":"int24","name":"tick","type":"int24"},{"internalType":"uint16","name":"observationIndex","type":"uint16"},{"internalType":"uint16","name":"observationCardinality","type":"uint16"},{"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},{"internalType":"uint8","name":"feeProtocol","type":"uint8"},{"internalType":"bool","name":"unlocked","type":"bool"}],"stateMutability":"view","type":"function"}];
+    const poolAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D'; // Your V3 pool
+    const poolABI = [ // Minimal V3 ABI
+      {"constant":true,"inputs":[],"name":"slot0","outputs":[
+        {"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},
+        {"internalType":"int24","name":"tick","type":"int24"},
+        {"internalType":"uint16","name":"observationIndex","type":"uint16"},
+        {"internalType":"uint16","name":"observationCardinality","type":"uint16"},
+        {"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},
+        {"internalType":"uint8","name":"feeProtocol","type":"uint8"}],"stateMutability":"view","type":"function"},
+      {"constant":true,"inputs":[],"name":"liquidity","outputs":[{"internalType":"uint128","name":"","type":"uint128"}],"stateMutability":"view","type":"function"},
+    ];
+    const pair = new web3.eth.Contract(poolABI, poolAddress);
 
-    async function derivePoolAddr() {
-      const factory = new web3.eth.Contract(factoryABI, factoryAddr);
-      return factory.methods.getPool(TIFFY, WBNB, FEE).call();
-    }
-
-    const coingecko = 'https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd';
-
-    async function fetchBNBUSD() {
+    async function getBNBPrice() {
       try {
-        const r = await fetch(coingecko);
-        const j = await r.json();
-        return j.binancecoin.usd;
-      } catch (e) {
-        console.error(e); return 0;
-      }
+        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
+        return (await r.json()).binancecoin.usd;
+      } catch { return 0; }
     }
 
-    function sqrtToPrice(sqrtX96) {
-      return (Number(sqrtX96) ** 2) / (2 ** 192);
+    function fromX96ToPrice(sqrtX96, decimals0 = 18, decimals1 = 18) {
+      const price = (sqrtX96 / (2n ** 96n)) ** 2;
+      const factor = 10 ** (decimals0 - decimals1);
+      return Number(price) * factor;
     }
 
-    async function loadPrice() {
-      const poolAddr = await derivePoolAddr();
-      if (!poolAddr || poolAddr === '0x0000000000000000000000000000000000000000') {
-        document.getElementById('usd-price').innerText = 'Pool not found';
-        return;
-      }
-
-      const pool = new web3.eth.Contract(poolABI, poolAddr);
-      const s0 = await pool.methods.slot0().call();
-      const priceBNB = sqrtToPrice(s0.sqrtPriceX96); 
-      const usdPerBNB = await fetchBNBUSD();
-      const priceUSD = priceBNB * usdPerBNB;
-      document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceUSD.toFixed(6)} USD`;
+    async function updatePrice() {
+      const [slot0, bnbUSD] = await Promise.all([pair.methods.slot0().call(), getBNBPrice()]);
+      const sqrtX96 = BigInt(slot0.sqrtPriceX96);
+      const priceBNB = fromX96ToPrice(sqrtX96);
+      const priceUSD = priceBNB * bnbUSD;
+      document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceUSD.toFixed(6)}`;
     }
 
-    loadPrice();
-    setInterval(loadPrice, 15000);
-
-    function showPopup() {
-      document.getElementById('overlay').style.display = 'block';
-      document.getElementById('popupGame').style.display = 'block';
-    }
-    function hidePopup() {
-      document.getElementById('overlay').style.display = 'none';
-      document.getElementById('popupGame').style.display = 'none';
-    }
+    updatePrice();
+    setInterval(updatePrice, 15000);
   </script>
 </body>
 </html>
