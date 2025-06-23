@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>TIFFYAI Token Price</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>TIFFYAI Price Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       background-color: #0f0f0f;
       color: #00ffcc;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      flex-direction: column;
     }
-
     #price-box {
       background-color: #1c1c1c;
       padding: 20px 30px;
@@ -25,48 +24,34 @@
       box-shadow: 0 0 20px #00ffcc88;
       text-align: center;
     }
-
     #usd-price {
       font-size: 1.8em;
       font-weight: bold;
       margin: 10px 0;
       color: #00ffd9;
     }
-
-    .footer {
-      font-size: 0.9em;
-      color: #888;
-      margin-top: 20px;
-    }
-
-    #popupGame {
+    #popupGame, #overlay {
       display: none;
       position: fixed;
-      top: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90%;
-      max-width: 500px;
+      z-index: 1000;
+    }
+    #overlay {
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+    }
+    #popupGame {
+      top: 10%; left: 50%;
+      width: 90%; max-width: 500px;
       background: #001f3f;
       border: 2px solid teal;
       border-radius: 10px;
       padding: 20px;
-      z-index: 1001;
+      transform: translateX(-50%);
       color: white;
     }
-
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      z-index: 1000;
-    }
-
     #popupGame button {
       background: linear-gradient(135deg, #f2c94c, #f2994a);
-      color: #000;
+      color: black;
       font-weight: bold;
       border: none;
       padding: 14px 28px;
@@ -78,133 +63,95 @@
       animation: pulse 2s infinite;
       transition: all 0.3s ease-in-out;
     }
-
-    #popupGame button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 30px #f2994a, 0 0 40px #f2c94c;
-    }
-
     #showGameButton {
-      display: block;
-      margin: 20px auto;
+      margin-top: 20px;
+      padding: 12px 24px;
       background: teal;
       color: white;
       border: none;
-      padding: 12px 24px;
       border-radius: 8px;
       cursor: pointer;
       font-size: 18px;
     }
-
     @keyframes pulse {
       0% { box-shadow: 0 0 12px #f2c94c; }
-      50% { box-shadow: 0 0 25px #f2c94c, 0 0 35px #f2994a; }
+      50% { box-shadow: 0 0 35px #f2994a; }
       100% { box-shadow: 0 0 12px #f2c94c; }
     }
   </style>
 </head>
 <body>
+
   <div id="price-box">
-    <div id="usd-price">TIFFYAI Price: Loading USD...</div>
-    <div class="footer">Real-time from BSC Mainnet Liquidity</div>
+    <div id="usd-price">TIFFYAI Price: Loading…</div>
+    <div>Fetched from PancakeSwap V3 pool</div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-  <script>
-    const web3 = new Web3('https://bsc-dataseed.binance.org');
-
-    const pairAddress = '0x9F8Ed638f4Ddf65e18f3A3222f5275392329D07F'; // TIFFY/BNB V2 pair
-    const TIFFY_ADDRESS = '0x0f2e872C262b0D3b1F8e0f6FbE5F33647fA2d358'; // TIFFY Token
-    const pairABI = [
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "getReserves",
-        "outputs": [
-          { "internalType": "uint112", "name": "_reserve0", "type": "uint112" },
-          { "internalType": "uint112", "name": "_reserve1", "type": "uint112" },
-          { "internalType": "uint32", "name": "_blockTimestampLast", "type": "uint32" }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "token0",
-        "outputs": [{ "name": "", "type": "address" }],
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "token1",
-        "outputs": [{ "name": "", "type": "address" }],
-        "type": "function"
-      }
-    ];
-
-    const pairContract = new web3.eth.Contract(pairABI, pairAddress);
-
-    async function getBNBPriceUSD() {
-      try {
-        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
-        const data = await res.json();
-        return data.binancecoin.usd;
-      } catch (e) {
-        console.error('BNB USD fetch failed', e);
-        return 0;
-      }
-    }
-
-    async function updateUSDPrice() {
-      try {
-        const [reserves, token0] = await Promise.all([
-          pairContract.methods.getReserves().call(),
-          pairContract.methods.token0().call()
-        ]);
-
-        const reserve0 = web3.utils.fromWei(reserves._reserve0);
-        const reserve1 = web3.utils.fromWei(reserves._reserve1);
-
-        const isTiffyToken0 = token0.toLowerCase() === TIFFY_ADDRESS.toLowerCase();
-        const tiffyReserve = isTiffyToken0 ? reserve0 : reserve1;
-        const bnbReserve = isTiffyToken0 ? reserve1 : reserve0;
-
-        const priceInBNB = parseFloat(bnbReserve) / parseFloat(tiffyReserve);
-        const bnbUSD = await getBNBPriceUSD();
-        const priceInUSD = priceInBNB * bnbUSD;
-
-        document.getElementById('usd-price').innerText =
-          `TIFFYAI Price: $${priceInUSD.toFixed(6)} USD`;
-      } catch (err) {
-        console.error('Error calculating price:', err);
-      }
-    }
-
-    updateUSDPrice();
-    setInterval(updateUSDPrice, 15000);
-  </script>
+  <button id="showGameButton" onclick="showPopup()">Claim 1 TIFFY & Blue Key</button>
 
   <div id="overlay" onclick="hidePopup()"></div>
   <div id="popupGame">
     <h2>Start Mining TiffyAI</h2>
     <p>Click to begin your journey. Collect 1 TIFFY & 1 Blue Key Now!</p>
-    <button onclick="window.open('https://www.tiffyai.co.za/key-claim', '_blank')">Collect 1 TIFFY</button>
+    <button onclick="window.open('https://www.tiffyai.co.za/key-claim','_blank')">Collect 1 TIFFY</button>
   </div>
 
-  <button id="showGameButton" onclick="showPopup()">Send 1 TIFFY to your wallet now!</button>
-
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script>
-    function showPopup() {
-      document.getElementById('popupGame').style.display = 'block';
-      document.getElementById('overlay').style.display = 'block';
+    const web3 = new Web3('https://bsc-dataseed.binance.org/');
+    const TIFFY = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5';
+    const WBNB = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+    const FEE = 100; // 0.01% = fee tier 100
+    const factoryAddr = '0x85BFa53b72a30D859D7786953E750E3dCbaCE57c'; // Pancake V3 factory
+    const factoryABI = [{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint24","name":"fee","type":"uint24"}],"name":"getPool","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
+    const poolABI = [{"inputs":[],"name":"slot0","outputs":[{"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},{"internalType":"int24","name":"tick","type":"int24"},{"internalType":"uint16","name":"observationIndex","type":"uint16"},{"internalType":"uint16","name":"observationCardinality","type":"uint16"},{"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},{"internalType":"uint8","name":"feeProtocol","type":"uint8"},{"internalType":"bool","name":"unlocked","type":"bool"}],"stateMutability":"view","type":"function"}];
+
+    async function derivePoolAddr() {
+      const factory = new web3.eth.Contract(factoryABI, factoryAddr);
+      return factory.methods.getPool(TIFFY, WBNB, FEE).call();
     }
 
+    const coingecko = 'https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd';
+
+    async function fetchBNBUSD() {
+      try {
+        const r = await fetch(coingecko);
+        const j = await r.json();
+        return j.binancecoin.usd;
+      } catch (e) {
+        console.error(e); return 0;
+      }
+    }
+
+    function sqrtToPrice(sqrtX96) {
+      return (Number(sqrtX96) ** 2) / (2 ** 192);
+    }
+
+    async function loadPrice() {
+      const poolAddr = await derivePoolAddr();
+      if (!poolAddr || poolAddr === '0x0000000000000000000000000000000000000000') {
+        document.getElementById('usd-price').innerText = 'Pool not found';
+        return;
+      }
+
+      const pool = new web3.eth.Contract(poolABI, poolAddr);
+      const s0 = await pool.methods.slot0().call();
+      const priceBNB = sqrtToPrice(s0.sqrtPriceX96); 
+      const usdPerBNB = await fetchBNBUSD();
+      const priceUSD = priceBNB * usdPerBNB;
+      document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceUSD.toFixed(6)} USD`;
+    }
+
+    loadPrice();
+    setInterval(loadPrice, 15000);
+
+    function showPopup() {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById('popupGame').style.display = 'block';
+    }
     function hidePopup() {
-      document.getElementById('popupGame').style.display = 'none';
       document.getElementById('overlay').style.display = 'none';
+      document.getElementById('popupGame').style.display = 'none';
     }
   </script>
 </body>
