@@ -1,31 +1,104 @@
-<script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-<script>
-const web3 = new Web3('https://bsc-dataseed.binance.org/');
-const pair = new web3.eth.Contract(
-  [{
-    "constant":true,"inputs":[],"name":"slot0",
-    "outputs":[{"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},{"internalType":"int24","name":"tick","type":"int24"},{"internalType":"uint16","name":"observationIndex","type":"uint16"},{"internalType":"uint16","name":"observationCardinality","type":"uint16"},{"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},{"internalType":"uint32","name":"feeProtocol","type":"uint32"},{"internalType":"bool","name":"unlocked","type":"bool"}],
-    "payable":false,"stateMutability":"view","type":"function"
-  }],
-  '0x1305302Ef3929DD9252b051077e4ca182107F00D'
-);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TIFFYAI Price Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #0f0f0f;
+      color: #00ffcc;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+    }
+    #price-box {
+      background-color: #1c1c1c;
+      padding: 20px 30px;
+      border: 1px solid #00ffcc;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ffcc88;
+      text-align: center;
+    }
+    #usd-price {
+      font-size: 1.8em;
+      font-weight: bold;
+      margin: 10px 0;
+      color: #00ffd9;
+    }
+    .footer {
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="price-box">
+    <div id="usd-price">TIFFYAI Price: Loading...</div>
+    <div class="footer">Live from PancakeSwap V3</div>
+  </div>
 
-async function updatePrice() {
-  try {
-    const r = await pair.methods.slot0().call();
-    console.log("Raw slot0:", r);
-    const sqrtBN = web3.utils.toBN(r.sqrtPriceX96);
-    const priceBNB = sqrtBN.mul(sqrtBN).div(web3.utils.toBN(2).pow(web3.utils.toBN(192)));
-    const bnbPrice = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd')
-                         .then(res=>res.json()).then(j=>j.binancecoin.usd);
-    const usd = parseFloat(priceBNB.toString()) * bnbPrice;
-    document.getElementById('usd-price').innerText = `TIFFYAI Price: $${usd.toFixed(6)}`;
-  } catch(e) {
-    console.error("UpdatePrice error:", e);
-    document.getElementById('usd-price').innerText = `Error loading price`;
-  }
-}
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <script>
+    const web3 = new Web3('https://bsc-dataseed.binance.org/');
 
-updatePrice();
-setInterval(updatePrice, 15000);
-</script>
+    const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
+    const pairABI = [{
+      "inputs": [],
+      "name": "slot0",
+      "outputs": [
+        { "internalType": "uint160", "name": "sqrtPriceX96", "type": "uint160" },
+        { "internalType": "int24", "name": "tick", "type": "int24" },
+        { "internalType": "uint16", "name": "observationIndex", "type": "uint16" },
+        { "internalType": "uint16", "name": "observationCardinality", "type": "uint16" },
+        { "internalType": "uint16", "name": "observationCardinalityNext", "type": "uint16" },
+        { "internalType": "uint8", "name": "feeProtocol", "type": "uint8" },
+        { "internalType": "bool", "name": "unlocked", "type": "bool" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }];
+
+    const pair = new web3.eth.Contract(pairABI, pairAddress);
+
+    async function getBNBPriceUSD() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
+        const data = await res.json();
+        return data.binancecoin.usd;
+      } catch (e) {
+        console.error("Failed to get BNB price:", e);
+        return 0;
+      }
+    }
+
+    async function updatePrice() {
+      try {
+        const slot0 = await pair.methods.slot0().call();
+        const sqrtPriceX96 = web3.utils.toBN(slot0.sqrtPriceX96);
+
+        // Uniswap V3 formula: price = (sqrtPriceX96 ^ 2) / 2^192
+        const numerator = sqrtPriceX96.mul(sqrtPriceX96);
+        const denominator = web3.utils.toBN(2).pow(web3.utils.toBN(192));
+        const priceInWBNB = parseFloat(numerator.div(denominator).toString());
+
+        const bnbUsd = await getBNBPriceUSD();
+        const priceUsd = priceInWBNB * bnbUsd;
+
+        document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceUsd.toFixed(6)} USD`;
+      } catch (err) {
+        console.error("Error loading price:", err);
+        document.getElementById('usd-price').innerText = "Error loading price";
+      }
+    }
+
+    updatePrice();
+    setInterval(updatePrice, 15000);
+  </script>
+</body>
+</html>
