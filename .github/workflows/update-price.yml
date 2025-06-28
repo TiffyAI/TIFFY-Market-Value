@@ -2,16 +2,18 @@ name: Update TIFFY Price
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Runs every 15 minutes
-  workflow_dispatch:        # Allows manual run from GitHub UI
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false  # 🚨 Prevents default token from being used
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -25,13 +27,13 @@ jobs:
       - name: Run update script
         run: node scripts/update-price.js
 
-      - name: Commit and Push updated price.json
+      - name: Commit and push price.json
         env:
-          TOKEN: ${{ secrets.TIFFY_PAT }}
+          GITHUB_TOKEN: ${{ secrets.TIFFY_PAT }}
         run: |
           git config user.name "TIFFY Bot"
           git config user.email "bot@tiffyai.co.za"
           git add price.json
           git commit -m "Update price.json with latest TIFFY price" || echo "No changes to commit"
-          git remote set-url origin https://x-access-token:${TOKEN}@github.com/TiffyAI/TIFFY-Market-Value.git
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/TiffyAI/TIFFY-Market-Value.git
           git push origin HEAD:main
