@@ -1,28 +1,26 @@
-// scripts/update-price.js
-
-const { Web3 } = require('web3');             // ✅ Only this import
-const web3 = Web3.create('https://bsc-dataseed.binance.org/');  // ✅ Only this instance
+const Web3 = require('web3');
 const fs = require('fs');
 const fetch = require('node-fetch');
 
+const web3 = new Web3('https://bsc-dataseed.binance.org/');
 const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
 
 const pairABI = [
   {
-    constant: true,
-    inputs: [],
-    name: 'slot0',
-    outputs: [
-      { name: 'sqrtPriceX96', type: 'uint160' },
-      { name: 'tick', type: 'int24' },
-      { name: 'observationIndex', type: 'uint16' },
-      { name: 'observationCardinality', type: 'uint16' },
-      { name: 'observationCardinalityNext', type: 'uint16' },
-      { name: 'feeProtocol', type: 'uint8' },
-      { name: 'unlocked', type: 'bool' }
+    "constant": true,
+    "inputs": [],
+    "name": "slot0",
+    "outputs": [
+      {"name": "sqrtPriceX96", "type": "uint160"},
+      {"name": "tick", "type": "int24"},
+      {"name": "observationIndex", "type": "uint16"},
+      {"name": "observationCardinality", "type": "uint16"},
+      {"name": "observationCardinalityNext", "type": "uint16"},
+      {"name": "feeProtocol", "type": "uint8"},
+      {"name": "unlocked", "type": "bool"}
     ],
-    stateMutability: 'view',
-    type: 'function'
+    "stateMutability": "view",
+    "type": "function"
   }
 ];
 
@@ -33,8 +31,8 @@ async function getBNBPriceUSD() {
     const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
     const data = await res.json();
     return data.binancecoin.usd;
-  } catch (e) {
-    console.error('Failed to fetch BNB price:', e);
+  } catch (err) {
+    console.error("Failed to fetch BNB price:", err);
     return 0;
   }
 }
@@ -47,8 +45,8 @@ async function main() {
     const denominator = BigInt(2) ** BigInt(192);
     const priceInWBNB = Number(numerator * BigInt(1e18) / denominator) / 1e18;
 
-    const bnbToUSD = await getBNBPriceUSD();
-    const priceInUSD = priceInWBNB * bnbToUSD;
+    const bnbUsd = await getBNBPriceUSD();
+    const priceInUSD = priceInWBNB * bnbUsd;
 
     const output = {
       tiffyToWBNB: priceInWBNB.toFixed(10),
@@ -57,9 +55,9 @@ async function main() {
     };
 
     fs.writeFileSync('price.json', JSON.stringify(output, null, 2));
-    console.log('✅ price.json updated with real-time data:', output);
+    console.log("✅ price.json updated with:", output);
   } catch (err) {
-    console.error('❌ Error updating price.json:', err);
+    console.error("❌ Error updating price.json:", err);
     process.exit(1);
   }
 }
