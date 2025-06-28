@@ -1,29 +1,5 @@
-const Web3 = require('web3').default;
 const fs = require('fs');
 const fetch = require('node-fetch');
-
-const web3 = new Web3('https://bsc-dataseed.binance.org/');
-const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
-
-const pairABI = [
-  {
-    "inputs": [],
-    "name": "slot0",
-    "outputs": [
-      { "internalType": "uint160", "name": "sqrtPriceX96", "type": "uint160" },
-      { "internalType": "int24", "name": "tick", "type": "int24" },
-      { "internalType": "uint16", "name": "observationIndex", "type": "uint16" },
-      { "internalType": "uint16", "name": "observationCardinality", "type": "uint16" },
-      { "internalType": "uint16", "name": "observationCardinalityNext", "type": "uint16" },
-      { "internalType": "uint8", "name": "feeProtocol", "type": "uint8" },
-      { "internalType": "bool", "name": "unlocked", "type": "bool" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
-
-const contract = new web3.eth.Contract(pairABI, pairAddress);
 
 async function getBNBPriceUSD() {
   const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
@@ -33,12 +9,8 @@ async function getBNBPriceUSD() {
 
 async function updatePrice() {
   try {
-    const slot0 = await contract.methods.slot0().call();
-    const sqrtPriceX96 = BigInt(slot0.sqrtPriceX96);
-    const numerator = sqrtPriceX96 * sqrtPriceX96;
-    const denominator = BigInt(2) ** BigInt(192);
-    const priceInWBNB = Number(numerator * BigInt(1e18) / denominator) / 1e18;
-
+    // Manually calculated based on your latest liquidity info
+    const priceInWBNB = 0.01648;
     const bnbUsd = await getBNBPriceUSD();
     const priceInUSD = priceInWBNB * bnbUsd;
 
@@ -49,7 +21,7 @@ async function updatePrice() {
     };
 
     fs.writeFileSync('price.json', JSON.stringify(priceData, null, 2));
-    console.log("✅ price.json updated:", priceData);
+    console.log("✅ price.json updated with manual data:", priceData);
   } catch (err) {
     console.error("❌ Error updating price.json:", err);
     process.exit(1);
