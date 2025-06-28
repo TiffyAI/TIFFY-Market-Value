@@ -1,0 +1,32 @@
+name: Update TIFFY Price
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # Every 15 minutes
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install node-fetch@2 web3
+
+      - name: Run update script
+        run: node scripts/update-price.js
+
+      - name: Commit and push
+        run: |
+          git config user.name "TIFFY Bot"
+          git config user.email "bot@tiffyai.co.za"
+          git add price.json
+          git commit -m "Update price.json with latest TIFFY price"
+          git push
