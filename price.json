@@ -1,6 +1,5 @@
 {
-  "timestamp": "2025-06-28T00:00:00Z",
-  "tiffyPriceUSD": 0,
-  "tiffyPerWBNB": 0,
-  "bnbPriceUSD": 0
+  "tiffyToWBNB": "0.0164800000",
+  "tiffyToUSD": "10.676568",
+  "lastUpdated": "2025-06-28T21:24:51.062Z"
 }
