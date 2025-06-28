@@ -1,11 +1,10 @@
 // scripts/update-price.js
 
-const { Web3 } = require('web3');
-const web3 = Web3.create('https://bsc-dataseed.binance.org/');
+const { Web3 } = require('web3');             // ✅ Only this import
+const web3 = Web3.create('https://bsc-dataseed.binance.org/');  // ✅ Only this instance
 const fs = require('fs');
 const fetch = require('node-fetch');
 
-const web3 = new Web3('https://bsc-dataseed.binance.org/');
 const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
 
 const pairABI = [
