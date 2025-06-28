@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false  # 🚨 Prevents default token from being used
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -19,18 +21,19 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install web3@4.0.2 node-fetch@2
+        run: |
+          npm install web3@4.0.2 node-fetch@2
 
       - name: Run update script
         run: node scripts/update-price.js
 
-      - name: Commit updated price.json
+      - name: Commit and push price.json
         env:
-          GIT_TOKEN: ${{ secrets.TIFFY_PAT }}
+          GITHUB_TOKEN: ${{ secrets.TIFFY_PAT }}
         run: |
-          git config --global user.name "TIFFY Bot"
-          git config --global user.email "bot@tiffyai.co.za"
+          git config user.name "TIFFY Bot"
+          git config user.email "bot@tiffyai.co.za"
           git add price.json
           git commit -m "Update price.json with latest TIFFY price" || echo "No changes to commit"
-          git remote set-url origin https://x-access-token:$GIT_TOKEN@github.com/TiffyAI/TIFFY-Market-Value.git
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/TiffyAI/TIFFY-Market-Value.git
           git push origin HEAD:main
