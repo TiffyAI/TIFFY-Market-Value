@@ -3,7 +3,7 @@ name: Update TIFFY Price
 on:
   schedule:
     - cron: '*/15 * * * *'  # Every 15 minutes
-  workflow_dispatch:        # Allow manual run
+  workflow_dispatch:
 
 jobs:
   update:
@@ -19,8 +19,7 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: |
-          npm install web3@4.0.2 node-fetch@2
+        run: npm install web3@4.0.2 node-fetch@2
 
       - name: Run update script
         run: node scripts/update-price.js
@@ -31,4 +30,4 @@ jobs:
           git config user.email "bot@tiffyai.co.za"
           git add price.json
           git commit -m "Update price.json with latest TIFFY price" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.TIFFY_PAT }}@github.com/${{ github.repository }}.git HEAD:main
+          git push https://x-access-token:${{ secrets.TIFFY_PAT }}@github.com/TiffyAI/TIFFY-Market-Value.git HEAD:main
