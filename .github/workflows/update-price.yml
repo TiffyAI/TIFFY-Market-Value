@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
-          persist-credentials: false  # 🚨 Prevents default token from being used
+          persist-credentials: false  # Prevent default token usage
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install web3@4.0.2 node-fetch@2
+          npm install web3@1.10.0 node-fetch@2
 
       - name: Run update script
         run: node scripts/update-price.js
