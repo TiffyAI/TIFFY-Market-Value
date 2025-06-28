@@ -1,23 +1,22 @@
 const Web3 = require('web3').default;
-const fetch = require('node-fetch');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 const web3 = new Web3('https://bsc-dataseed.binance.org/');
 const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
 
 const pairABI = [
   {
-    "constant": true,
     "inputs": [],
     "name": "slot0",
     "outputs": [
-      { "name": "sqrtPriceX96", "type": "uint160" },
-      { "name": "tick", "type": "int24" },
-      { "name": "observationIndex", "type": "uint16" },
-      { "name": "observationCardinality", "type": "uint16" },
-      { "name": "observationCardinalityNext", "type": "uint16" },
-      { "name": "feeProtocol", "type": "uint8" },
-      { "name": "unlocked", "type": "bool" }
+      { "internalType": "uint160", "name": "sqrtPriceX96", "type": "uint160" },
+      { "internalType": "int24", "name": "tick", "type": "int24" },
+      { "internalType": "uint16", "name": "observationIndex", "type": "uint16" },
+      { "internalType": "uint16", "name": "observationCardinality", "type": "uint16" },
+      { "internalType": "uint16", "name": "observationCardinalityNext", "type": "uint16" },
+      { "internalType": "uint8", "name": "feeProtocol", "type": "uint8" },
+      { "internalType": "bool", "name": "unlocked", "type": "bool" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -27,17 +26,12 @@ const pairABI = [
 const contract = new web3.eth.Contract(pairABI, pairAddress);
 
 async function getBNBPriceUSD() {
-  try {
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
-    const data = await res.json();
-    return data.binancecoin.usd;
-  } catch (error) {
-    console.error('Error fetching BNB USD price:', error);
-    return 0;
-  }
+  const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
+  const data = await res.json();
+  return data.binancecoin.usd;
 }
 
-async function updatePriceFile() {
+async function updatePrice() {
   try {
     const slot0 = await contract.methods.slot0().call();
     const sqrtPriceX96 = BigInt(slot0.sqrtPriceX96);
@@ -49,17 +43,17 @@ async function updatePriceFile() {
     const priceInUSD = priceInWBNB * bnbUsd;
 
     const priceData = {
-      tiffyToUSD: priceInUSD.toFixed(6),
       tiffyToWBNB: priceInWBNB.toFixed(10),
+      tiffyToUSD: priceInUSD.toFixed(6),
       lastUpdated: new Date().toISOString()
     };
 
     fs.writeFileSync('price.json', JSON.stringify(priceData, null, 2));
-    console.log('✅ Updated price.json:', priceData);
+    console.log("✅ price.json updated:", priceData);
   } catch (err) {
-    console.error('Error updating price.json:', err);
+    console.error("❌ Error updating price.json:", err);
     process.exit(1);
   }
 }
 
-updatePriceFile();
+updatePrice();
