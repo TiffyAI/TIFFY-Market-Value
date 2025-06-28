@@ -1,6 +1,7 @@
 // scripts/update-price.js
 
-const Web3 = require('web3');
+const { Web3 } = require('web3');
+const web3 = Web3.create('https://bsc-dataseed.binance.org/');
 const fs = require('fs');
 const fetch = require('node-fetch');
 
