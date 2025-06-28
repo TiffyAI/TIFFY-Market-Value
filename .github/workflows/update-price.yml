@@ -2,8 +2,8 @@ name: Update TIFFY Price
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
-  workflow_dispatch:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:        # Manual trigger
 
 jobs:
   update:
@@ -24,9 +24,6 @@ jobs:
 
       - name: Run update script
         run: node scripts/update-price.js
-
-      - name: Debug token prefix (TEMP)
-        run: echo "Token starts with: ${TIFFY_PAT:0:5}"
 
       - name: Commit updated price.json
         run: |
