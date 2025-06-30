@@ -1,0 +1,44 @@
+{
+  "name": "TiffyAI",
+  "symbol": "TIFFY",
+  "decimals": 18,
+  "description": "TIFFYAI is the smartest token on BNB Chain — AI-enhanced, gamified, and backed by an evolving GameFi + staking ecosystem with on-chain milestones and reward logic.",
+  "website": "https://www.tiffyai.co.za",
+  "logo": "https://tiffyai.github.io/Blue-Key-Claim/TiffyAI-Token.png",
+  "tags": ["AI", "BNB Chain", "DeFi", "GameFi", "Gamified", "Token"],
+  "social": {
+    "telegram": "https://t.me/TiffyAI",
+    "twitter": "https://x.com/CatsMeyer?t=8vkytk0WQczThio73Ztshg&s=09",
+    "facebook": [
+      "https://facebook.com/groups/TiffyAI/",
+      "https://facebook.com/groups/easynetworking/"
+    ]
+  },
+  "explorer": "https://bscscan.com/token/0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5",
+  "sourcify": "https://repo.sourcify.dev/contracts/full_match/56/0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5",
+  "audit": {
+    "status": "community-audited",
+    "report": "https://tiffyai.github.io/audits/audit-summary.pdf",
+    "auditor": "OpenAI GPT-4 Community Review"
+  },
+  "security": {
+    "ownershipRenounced": false,
+    "proxy": false,
+    "buyTax": "3%",
+    "sellTax": "3%",
+    "taxModifiable": true,
+    "cooldown": "30s per wallet",
+    "whitelist": true,
+    "antiWhale": false,
+    "selfDestructable": false
+  },
+  "features": {
+    "staking": "Yes, with NFT boost",
+    "burn": "Yes, % burned each transaction",
+    "reward": "Yes, elevation for stacking holders",
+    "treasury": "Auto-funded with each transaction",
+    "referral": "Built-in share-to-earn system",
+    "ai": "AI-driven trading layer with milestone unlocks",
+    "gamification": "Blue Key & Gold Key system, Lucky Wheel, treasure milestones"
+  }
+}
