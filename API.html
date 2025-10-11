@@ -99,6 +99,7 @@
     #priceChartContainer {
       max-width: 600px;
       width: 90%;
+      height: 400px; /* Bigger frame as you suggested for better visibility */
       margin-top: 20px;
       background: #1c1c1c;
       padding: 10px;
@@ -187,7 +188,7 @@
         return data.binancecoin.usd;
       } catch (error) {
         console.error('Error fetching BNB USD price:', error);
-        return 250; // Fallback BNB price
+        return 250;
       }
     }
 
@@ -230,36 +231,48 @@
         const chartResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/TIFFY-Strength.json');
         const chartConfig = await chartResponse.json();
 
-        // Ensure all datasets are preserved with styling
+        // Assign yAxisID to each dataset
+        chartConfig.data.datasets[0].yAxisID = 'yTIFFY'; // TIFFY on left
+        chartConfig.data.datasets[1].yAxisID = 'yBTC'; // BTC on right
+        chartConfig.data.datasets[2].yAxisID = 'yETH'; // ETH on right (separate for scale)
+
+        // Add multiple y-axes to options
+        chartConfig.options.scales = {
+          x: { title: { display: true, text: 'Time (UTC)' } },
+          yTIFFY: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'TIFFY Price (USD)' },
+            grid: { drawOnChartArea: true } // Show grid for main axis
+          },
+          yBTC: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'BTC Price (USD)' },
+            grid: { drawOnChartArea: false } // No overlapping grid
+          },
+          yETH: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'ETH Price (USD)' },
+            grid: { drawOnChartArea: false } // No overlapping grid
+          }
+        };
+
+        // Force curves and styling
         chartConfig.data.datasets.forEach(dataset => {
-          dataset.tension = 0.4; // Force curvy lines
-          dataset.borderWidth = 2; // Bold for visibility
-          dataset.fill = false; // No fill for clarity
+          dataset.tension = 0.4;
+          dataset.borderWidth = 2;
+          dataset.fill = false;
         });
 
-        chartConfig.options = {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            title: {
-              display: true,
-              text: '24h Price Action: TIFFY Holds vs. Crypto Crash (Oct 10-11, 2025)'
-            },
-            legend: {
-              display: true,
-              position: 'bottom'
-            }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Time (UTC)' } },
-            y: { title: { display: true, text: 'Price (USD)' }, beginAtZero: false }
-          },
-          elements: { line: { tension: 0.4 } } // Global curve enforcement
-        };
+        chartConfig.options.responsive = true;
+        chartConfig.options.maintainAspectRatio = false;
+        chartConfig.options.plugins.legend.position = 'bottom';
 
         const ctx = document.getElementById('priceChart').getContext('2d');
         priceChart = new Chart(ctx, chartConfig);
-        console.log('Chart rendered with 3 lines: TIFFY (green), BTC (orange), ETH (purple)');
+        console.log('Chart rendered with 3 lines on separate scales: TIFFY (left, green), BTC (right, orange), ETH (right, purple)');
       } catch (err) {
         console.error('Error rendering initial chart:', err);
       }
@@ -274,18 +287,17 @@
         const latestPrice = priceData.TIFFY_to_USD;
         const latestTime = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 
-        // Append new data point to TIFFY dataset
-        const tiffyDataset = priceChart.data.datasets[0];
-        tiffyDataset.data.push(latestPrice);
+        // Append to TIFFY (left axis)
         priceChart.data.labels.push(latestTime);
+        priceChart.data.datasets[0].data.push(latestPrice);
 
-        // Trim to last 6 points if exceeded
+        // Trim to 6 points
         if (priceChart.data.labels.length > 6) {
           priceChart.data.labels.shift();
-          tiffyDataset.data.shift();
+          priceChart.data.datasets[0].data.shift();
         }
 
-        priceChart.update(); // Refresh with animation
+        priceChart.update();
         console.log(`Updated TIFFY to $${latestPrice.toFixed(2)} at ${latestTime}`);
       } catch (err) {
         console.error('Error updating TIFFY line:', err);
