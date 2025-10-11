@@ -96,7 +96,7 @@
       font-size: 18px;
     }
 
-    #priceChart {
+    #priceChartContainer {
       max-width: 600px;
       width: 90%;
       margin-top: 20px;
@@ -130,12 +130,16 @@
 
   <button id="showGameButton" onclick="showPopup()">Send 1 TIFFY to your wallet now!</button>
 
-  <!-- Chart Canvas -->
-  <canvas id="priceChart"></canvas>
+  <!-- Chart Container -->
+  <div id="priceChartContainer">
+    <canvas id="priceChart"></canvas>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
+    let priceChart; // Global chart instance
+
     const web3 = new Web3('https://bsc-dataseed.binance.org/');
     const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
     const TIFFY_TOKEN = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5'.toLowerCase();
@@ -219,43 +223,64 @@
       }
     }
 
-    async function updateChart() {
+    async function renderChart() {
       try {
-        // Fetch chart data
+        // Fetch static chart config
         const chartResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/TIFFY-Strength.json');
         const chartConfig = await chartResponse.json();
 
+        // Update tension for curvier lines
+        chartConfig.options.elements = { line: { tension: 0.4 } };
+        chartConfig.data.datasets.forEach(dataset => {
+          dataset.tension = 0.4;
+          dataset.borderWidth = 2; // Thicker lines for pop
+        });
+
+        // Initial render
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        priceChart = new Chart(ctx, chartConfig);
+
+        console.log('Chart rendered with 3 lines: TIFFY (green), BTC (orange), ETH (purple)');
+      } catch (err) {
+        console.error('Error rendering initial chart:', err);
+      }
+    }
+
+    async function updateTiffyLine() {
+      if (!priceChart) return;
+
+      try {
         // Fetch latest TIFFY price
         const priceResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json');
         const priceData = await priceResponse.json();
         const latestPrice = priceData.TIFFY_to_USD;
-        const latestTime = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+        const latestTime = new Date().toLocaleString('en-US', { timeZone: 'UTC' });
 
-        // Update TIFFY dataset with latest price
-        chartConfig.data.labels.push(latestTime);
-        chartConfig.data.datasets[0].data.push(latestPrice);
+        // Append only to TIFFY dataset (index 0)
+        priceChart.data.labels.push(latestTime);
+        priceChart.data.datasets[0].data.push(latestPrice);
 
-        // Keep only the last 6 data points for brevity
-        if (chartConfig.data.labels.length > 6) {
-          chartConfig.data.labels.shift();
-          chartConfig.data.datasets.forEach(dataset => dataset.data.shift());
+        // Shift only if >6 points (keeps history clean, but only for TIFFY)
+        if (priceChart.data.labels.length > 6) {
+          priceChart.data.labels.shift();
+          priceChart.data.datasets[0].data.shift(); // Only shift TIFFY data
+          // Don't shift BTC/ETH to keep their full context
         }
 
-        // Render chart
-        const ctx = document.getElementById('priceChart').getContext('2d');
-        new Chart(ctx, chartConfig);
+        priceChart.update('none'); // Smooth update without animation lag
+        console.log(`Updated TIFFY line to $${latestPrice.toFixed(2)} at ${latestTime}`);
       } catch (err) {
-        console.error('Error rendering chart:', err);
+        console.error('Error updating TIFFY line:', err);
       }
     }
 
     // Initial calls
     updatePrices();
-    updateChart();
+    renderChart();
 
     // Update every 15 seconds
     setInterval(updatePrices, 15000);
-    setInterval(updateChart, 15000);
+    setInterval(updateTiffyLine, 15000); // Separate update for TIFFY only
 
     function showPopup() {
       document.getElementById('popupGame').style.display = 'block';
