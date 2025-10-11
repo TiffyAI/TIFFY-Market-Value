@@ -130,7 +130,6 @@
 
   <button id="showGameButton" onclick="showPopup()">Send 1 TIFFY to your wallet now!</button>
 
-  <!-- Chart Container -->
   <div id="priceChartContainer">
     <canvas id="priceChart"></canvas>
   </div>
@@ -188,12 +187,19 @@
         return data.binancecoin.usd;
       } catch (error) {
         console.error('Error fetching BNB USD price:', error);
-        return 0;
+        return 250; // Fallback BNB price (~Oct 2025 estimate)
       }
     }
 
     async function updatePrices() {
       try {
+        // Fast fallback from price.json
+        const priceResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json');
+        const priceData = await priceResponse.json();
+        let priceInUSD = priceData.TIFFY_to_USD;
+        let priceInWBNB = priceData.TIFFY_to_WBNB;
+
+        // Override with Web3 if available
         const [slot0, token0, token1] = await Promise.all([
           contract.methods.slot0().call(),
           contract.methods.token0().call(),
@@ -205,8 +211,6 @@
         const denominator = BigInt(2) ** BigInt(192);
 
         const isTiffyToken0 = token0.toLowerCase() === TIFFY_TOKEN;
-
-        let priceInWBNB;
         if (isTiffyToken0) {
           priceInWBNB = Number(numerator * BigInt(1e18) / denominator) / 1e18;
         } else {
@@ -214,7 +218,7 @@
         }
 
         const bnbUsd = await getBNBPriceUSD();
-        const priceInUSD = priceInWBNB * bnbUsd;
+        priceInUSD = priceInWBNB * bnbUsd;
 
         document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceInUSD.toFixed(6)} USD`;
         document.getElementById('bnb-price').innerText = `1 TIFFY = ${priceInWBNB.toFixed(10)} WBNB`;
@@ -225,21 +229,18 @@
 
     async function renderChart() {
       try {
-        // Fetch static chart config
         const chartResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/TIFFY-Strength.json');
         const chartConfig = await chartResponse.json();
 
-        // Update tension for curvier lines
-        chartConfig.options.elements = { line: { tension: 0.4 } };
-        chartConfig.data.datasets.forEach(dataset => {
-          dataset.tension = 0.4;
-          dataset.borderWidth = 2; // Thicker lines for pop
-        });
+        // Enhance styling
+        chartConfig.options.elements = { line: { tension: 0.4, borderWidth: 2 } };
+        chartConfig.options.scales.x.title.text = 'Time (UTC)';
+        chartConfig.options.scales.y.title.text = 'Price (USD)';
+        chartConfig.options.responsive = true;
+        chartConfig.options.maintainAspectRatio = false;
 
-        // Initial render
         const ctx = document.getElementById('priceChart').getContext('2d');
         priceChart = new Chart(ctx, chartConfig);
-
         console.log('Chart rendered with 3 lines: TIFFY (green), BTC (orange), ETH (purple)');
       } catch (err) {
         console.error('Error rendering initial chart:', err);
@@ -250,25 +251,23 @@
       if (!priceChart) return;
 
       try {
-        // Fetch latest TIFFY price
         const priceResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json');
         const priceData = await priceResponse.json();
         const latestPrice = priceData.TIFFY_to_USD;
-        const latestTime = new Date().toLocaleString('en-US', { timeZone: 'UTC' });
+        const latestTime = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 
-        // Append only to TIFFY dataset (index 0)
+        // Append to TIFFY dataset only
         priceChart.data.labels.push(latestTime);
         priceChart.data.datasets[0].data.push(latestPrice);
 
-        // Shift only if >6 points (keeps history clean, but only for TIFFY)
+        // Shift only if >6 points, TIFFY only
         if (priceChart.data.labels.length > 6) {
           priceChart.data.labels.shift();
-          priceChart.data.datasets[0].data.shift(); // Only shift TIFFY data
-          // Don't shift BTC/ETH to keep their full context
+          priceChart.data.datasets[0].data.shift();
         }
 
-        priceChart.update('none'); // Smooth update without animation lag
-        console.log(`Updated TIFFY line to $${latestPrice.toFixed(2)} at ${latestTime}`);
+        priceChart.update('quiet'); // Minimal redraw
+        console.log(`Updated TIFFY to $${latestPrice.toFixed(2)} at ${latestTime}`);
       } catch (err) {
         console.error('Error updating TIFFY line:', err);
       }
@@ -278,9 +277,9 @@
     updatePrices();
     renderChart();
 
-    // Update every 15 seconds
+    // Update intervals
     setInterval(updatePrices, 15000);
-    setInterval(updateTiffyLine, 15000); // Separate update for TIFFY only
+    setInterval(updateTiffyLine, 15000);
 
     function showPopup() {
       document.getElementById('popupGame').style.display = 'block';
