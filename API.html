@@ -137,7 +137,7 @@
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
-    let priceChart; // Global chart instance
+    let priceChart;
 
     const web3 = new Web3('https://bsc-dataseed.binance.org/');
     const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
@@ -187,19 +187,17 @@
         return data.binancecoin.usd;
       } catch (error) {
         console.error('Error fetching BNB USD price:', error);
-        return 250; // Fallback BNB price (~Oct 2025 estimate)
+        return 250; // Fallback BNB price
       }
     }
 
     async function updatePrices() {
       try {
-        // Fast fallback from price.json
         const priceResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json');
         const priceData = await priceResponse.json();
         let priceInUSD = priceData.TIFFY_to_USD;
         let priceInWBNB = priceData.TIFFY_to_WBNB;
 
-        // Override with Web3 if available
         const [slot0, token0, token1] = await Promise.all([
           contract.methods.slot0().call(),
           contract.methods.token0().call(),
@@ -232,12 +230,32 @@
         const chartResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/TIFFY-Strength.json');
         const chartConfig = await chartResponse.json();
 
-        // Enhance styling
-        chartConfig.options.elements = { line: { tension: 0.4, borderWidth: 2 } };
-        chartConfig.options.scales.x.title.text = 'Time (UTC)';
-        chartConfig.options.scales.y.title.text = 'Price (USD)';
-        chartConfig.options.responsive = true;
-        chartConfig.options.maintainAspectRatio = false;
+        // Ensure all datasets are preserved with styling
+        chartConfig.data.datasets.forEach(dataset => {
+          dataset.tension = 0.4; // Force curvy lines
+          dataset.borderWidth = 2; // Bold for visibility
+          dataset.fill = false; // No fill for clarity
+        });
+
+        chartConfig.options = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: '24h Price Action: TIFFY Holds vs. Crypto Crash (Oct 10-11, 2025)'
+            },
+            legend: {
+              display: true,
+              position: 'bottom'
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Time (UTC)' } },
+            y: { title: { display: true, text: 'Price (USD)' }, beginAtZero: false }
+          },
+          elements: { line: { tension: 0.4 } } // Global curve enforcement
+        };
 
         const ctx = document.getElementById('priceChart').getContext('2d');
         priceChart = new Chart(ctx, chartConfig);
@@ -256,17 +274,18 @@
         const latestPrice = priceData.TIFFY_to_USD;
         const latestTime = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 
-        // Append to TIFFY dataset only
+        // Append new data point to TIFFY dataset
+        const tiffyDataset = priceChart.data.datasets[0];
+        tiffyDataset.data.push(latestPrice);
         priceChart.data.labels.push(latestTime);
-        priceChart.data.datasets[0].data.push(latestPrice);
 
-        // Shift only if >6 points, TIFFY only
+        // Trim to last 6 points if exceeded
         if (priceChart.data.labels.length > 6) {
           priceChart.data.labels.shift();
-          priceChart.data.datasets[0].data.shift();
+          tiffyDataset.data.shift();
         }
 
-        priceChart.update('quiet'); // Minimal redraw
+        priceChart.update(); // Refresh with animation
         console.log(`Updated TIFFY to $${latestPrice.toFixed(2)} at ${latestTime}`);
       } catch (err) {
         console.error('Error updating TIFFY line:', err);
