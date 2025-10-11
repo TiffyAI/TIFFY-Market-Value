@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TIFFYAI Token Price</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #0f0f0f;
+      color: #00ffcc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+    }
+
+    #price-box {
+      background-color: #1c1c1c;
+      padding: 20px 30px;
+      border: 1px solid #00ffcc;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ffcc88;
+      text-align: center;
+    }
+
+    #usd-price, #bnb-price {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin: 10px 0;
+      color: #00ffd9;
+    }
+
+    .footer {
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 20px;
+    }
+
+    #popupGame {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 500px;
+      background: #001f3f;
+      border: 2px solid teal;
+      border-radius: 10px;
+      padding: 20px;
+      z-index: 1001;
+      color: white;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+    }
+
+    #popupGame button {
+      background: linear-gradient(135deg, #f2c94c, #f2994a);
+      color: #000;
+      font-weight: bold;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: 0 0 20px #f2c94c;
+      animation: pulse 2s infinite;
+      transition: all 0.3s ease-in-out;
+    }
+
+    #popupGame button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px #f2994a, 0 0 40px #f2c94c;
+    }
+
+    #showGameButton {
+      display: block;
+      margin: 20px auto;
+      background: teal;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    #priceChart {
+      max-width: 600px;
+      width: 90%;
+      margin-top: 20px;
+      background: #1c1c1c;
+      padding: 10px;
+      border: 1px solid #00ffcc;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ffcc88;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 12px #f2c94c; }
+      50% { box-shadow: 0 0 25px #f2c94c, 0 0 35px #f2994a; }
+      100% { box-shadow: 0 0 12px #f2c94c; }
+    }
+  </style>
+</head>
+<body>
+  <div id="price-box">
+    <div id="usd-price">TIFFYAI Price: Loading USD...</div>
+    <div id="bnb-price">WBNB per TIFFY: Loading...</div>
+    <div class="footer">Real-time from PancakeSwap V3 Pool</div>
+  </div>
+
+  <div id="overlay" onclick="hidePopup()"></div>
+  <div id="popupGame">
+    <h2>Start Mining TiffyAI</h2>
+    <p>Click to begin your journey. Collect 1 TIFFY & 1 Blue Key Now!</p>
+    <button onclick="window.open('https://www.tiffyai.co.za/key-claim', '_blank')">Collect 1 TIFFY</button>
+  </div>
+
+  <button id="showGameButton" onclick="showPopup()">Send 1 TIFFY to your wallet now!</button>
+
+  <!-- Chart Canvas -->
+  <canvas id="priceChart"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    const web3 = new Web3('https://bsc-dataseed.binance.org/');
+    const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
+    const TIFFY_TOKEN = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5'.toLowerCase();
+
+    const pairABI = [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "slot0",
+        "outputs": [
+          { "name": "sqrtPriceX96", "type": "uint160" },
+          { "name": "tick", "type": "int24" },
+          { "name": "observationIndex", "type": "uint16" },
+          { "name": "observationCardinality", "type": "uint16" },
+          { "name": "observationCardinalityNext", "type": "uint16" },
+          { "name": "feeProtocol", "type": "uint8" },
+          { "name": "unlocked", "type": "bool" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "token0",
+        "outputs": [{ "name": "", "type": "address" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "token1",
+        "outputs": [{ "name": "", "type": "address" }],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
+
+    const contract = new web3.eth.Contract(pairABI, pairAddress);
+
+    async function getBNBPriceUSD() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
+        const data = await res.json();
+        return data.binancecoin.usd;
+      } catch (error) {
+        console.error('Error fetching BNB USD price:', error);
+        return 0;
+      }
+    }
+
+    async function updatePrices() {
+      try {
+        const [slot0, token0, token1] = await Promise.all([
+          contract.methods.slot0().call(),
+          contract.methods.token0().call(),
+          contract.methods.token1().call()
+        ]);
+
+        const sqrtPriceX96 = BigInt(slot0.sqrtPriceX96);
+        const numerator = sqrtPriceX96 * sqrtPriceX96;
+        const denominator = BigInt(2) ** BigInt(192);
+
+        const isTiffyToken0 = token0.toLowerCase() === TIFFY_TOKEN;
+
+        let priceInWBNB;
+        if (isTiffyToken0) {
+          priceInWBNB = Number(numerator * BigInt(1e18) / denominator) / 1e18;
+        } else {
+          priceInWBNB = Number(denominator * BigInt(1e18) / numerator) / 1e18;
+        }
+
+        const bnbUsd = await getBNBPriceUSD();
+        const priceInUSD = priceInWBNB * bnbUsd;
+
+        document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceInUSD.toFixed(6)} USD`;
+        document.getElementById('bnb-price').innerText = `1 TIFFY = ${priceInWBNB.toFixed(10)} WBNB`;
+      } catch (err) {
+        console.error('Error loading price:', err);
+      }
+    }
+
+    async function updateChart() {
+      try {
+        // Fetch chart data
+        const chartResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/TIFFY-Strength.json');
+        const chartConfig = await chartResponse.json();
+
+        // Fetch latest TIFFY price
+        const priceResponse = await fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json');
+        const priceData = await priceResponse.json();
+        const latestPrice = priceData.TIFFY_to_USD;
+        const latestTime = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+
+        // Update TIFFY dataset with latest price
+        chartConfig.data.labels.push(latestTime);
+        chartConfig.data.datasets[0].data.push(latestPrice);
+
+        // Keep only the last 6 data points for brevity
+        if (chartConfig.data.labels.length > 6) {
+          chartConfig.data.labels.shift();
+          chartConfig.data.datasets.forEach(dataset => dataset.data.shift());
+        }
+
+        // Render chart
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        new Chart(ctx, chartConfig);
+      } catch (err) {
+        console.error('Error rendering chart:', err);
+      }
+    }
+
+    // Initial calls
+    updatePrices();
+    updateChart();
+
+    // Update every 15 seconds
+    setInterval(updatePrices, 15000);
+    setInterval(updateChart, 15000);
+
+    function showPopup() {
+      document.getElementById('popupGame').style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
+    }
+
+    function hidePopup() {
+      document.getElementById('popupGame').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
