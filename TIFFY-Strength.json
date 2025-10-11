@@ -1,0 +1,58 @@
+{
+  "type": "line",
+  "data": {
+    "labels": ["Oct 10 00:00 UTC", "Oct 10 06:00", "Oct 10 12:00", "Oct 10 18:00", "Oct 11 00:00", "Oct 11 07:00"],
+    "datasets": [
+      {
+        "label": "TIFFY/USD",
+        "data": [21.00, 20.50, 20.20, 19.50, 18.50, 18.04],
+        "borderColor": "#00FF88",
+        "backgroundColor": "rgba(0, 255, 136, 0.1)",
+        "fill": false,
+        "tension": 0.1
+      },
+      {
+        "label": "BTC/USD",
+        "data": [123000, 122500, 122000, 121500, 121200, 121142],
+        "borderColor": "#FFA500",
+        "backgroundColor": "rgba(255, 165, 0, 0.1)",
+        "fill": false,
+        "tension": 0.1
+      },
+      {
+        "label": "ETH/USD",
+        "data": [4400, 4350, 4320, 4300, 4330, 4332],
+        "borderColor": "#8A2BE2",
+        "backgroundColor": "rgba(138, 43, 226, 0.1)",
+        "fill": false,
+        "tension": 0.1
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "24h Price Action: TIFFY Holds vs. Crypto Crash (Oct 10-11, 2025)"
+      },
+      "legend": {
+        "display": true
+      }
+    },
+    "scales": {
+      "y": {
+        "title": {
+          "display": true,
+          "text": "Price (USD)"
+        }
+      },
+      "x": {
+        "title": {
+          "display": true,
+          "text": "Time (UTC)"
+        }
+      }
+    }
+  }
+}
