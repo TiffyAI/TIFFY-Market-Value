@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 
 // — your provider & pair
 const web3 = new Web3('https://bsc-dataseed.binance.org/');
-const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
+const pairAddress = '0x8D7ab303074e912c18cDAA037092faE9E2DF1E72';
 
 // — define Tiffy’s address, lowercased
 const TIFFY_TOKEN = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5'.toLowerCase();
@@ -57,7 +57,7 @@ async function getBNBPriceUSD() {
     const data = await res.json();
     return data.binancecoin.usd;
   } catch (err) {
-    console.error('❌ Failed to fetch BNB price:', err);
+    console.error('❌ Failed to fetch TUSD price:', err);
     return 0;
   }
 }
