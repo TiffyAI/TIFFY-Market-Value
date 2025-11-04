@@ -32,7 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TIFFY_PAT }}
         run: |
           git config user.name "TIFFY Bot"
-          git config user.email "bot@tiffyai.co.za"
+          git config user.email "https://t.me/TiffyAI_Bot"
           git add price.json
           git commit -m "Update price.json with latest TIFFY price" || echo "No changes to commit"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/TiffyAI/TIFFY-Market-Value.git
