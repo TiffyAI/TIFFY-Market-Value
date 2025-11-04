@@ -106,14 +106,14 @@
 <body>
   <div id="price-box">
     <div id="usd-price">TIFFYAI Price: Loading USD...</div>
-    <div id="bnb-price">WBNB per TIFFY: Loading...</div>
+    <div id="bnb-price">TUSD per TIFFY: Loading...</div>
     <div class="footer">Real-time from PancakeSwap V3 Pool</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script>
     const web3 = new Web3('https://bsc-dataseed.binance.org/');
-    const pairAddress = '0x1305302Ef3929DD9252b051077e4ca182107F00D';
+    const pairAddress = '0x8D7ab303074e912c18cDAA037092faE9E2DF1E72';
     const TIFFY_TOKEN = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5'.toLowerCase();
 
     const pairABI = [
@@ -159,7 +159,7 @@
         const data = await res.json();
         return data.binancecoin.usd;
       } catch (error) {
-        console.error('Error fetching BNB USD price:', error);
+        console.error('Error fetching TUSD USD price:', error);
         return 0;
       }
     }
