@@ -188,8 +188,8 @@
         const bnbUsd = await getBNBPriceUSD();
         const priceInUSD = priceInWBNB * bnbUsd;
 
-        document.getElementById('usd-price').innerText = `TIFFYAI Price: $${priceInUSD.toFixed(6)} USD`;
-        document.getElementById('bnb-price').innerText = `1 TIFFY = ${priceInWBNB.toFixed(10)} WBNB`;
+        document.getElementById('usd-price').innerText = `TIFFYAI Trading Volume: $${priceInUSD.toFixed(6)} USD`;
+        document.getElementById('bnb-price').innerText = `1 TIFFY = ${priceInWBNB.toFixed(10)} TUSD`;
       } catch (err) {
         console.error('Error loading price:', err);
       }
